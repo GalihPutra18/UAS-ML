@@ -7,7 +7,7 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 
 
 # Path ke dataset
-path = "D:/kuliah/SEMESTER 4/ML/DataSet/UTS/archive (2)/Mental Health Dataset.csv"
+path = "Mental Health Dataset.csv"
 
 # Membaca dataset
 df = pd.read_csv(path)
