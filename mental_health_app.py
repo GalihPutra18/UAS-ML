@@ -1,716 +1,144 @@
-{
- "cells": [
-  {
-   "cell_type": "code",
-   "execution_count": 1,
-   "id": "28cf7536-22cc-41e1-bb58-e89ed0fce106",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "import pandas as pd\n",
-    "import streamlit as st\n",
-    "from sklearn.tree import DecisionTreeClassifier\n",
-    "from sklearn.model_selection import train_test_split\n",
-    "from sklearn.metrics import classification_report, confusion_matrix\n",
-    "from sklearn.metrics import accuracy_score"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 2,
-   "id": "8cd454bc-ccba-4a7c-8e28-e3b35a77cbfb",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "path = \"D:/kuliah/SEMESTER 4/ML/DataSet/UTS/archive (2)/Mental Health Dataset.csv\"\n",
-    "dataset = (path)\n",
-    "# Membuat DataFrame\n",
-    "df = pd.read_csv(dataset)\n",
-    "# Menghapus kolom 'Timestamp' dari dataset\n",
-    "df = df.drop(columns=['Timestamp'])"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 3,
-   "id": "cb75b17a-0447-4b2b-b4bb-45a1941ca2c2",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "# Menentukan kriteria dan membuat label baru 'mental_health_issue'\n",
-    "def determine_mental_health_issue(row):\n",
-    "    # Basic conditions based on single factors\n",
-    "    if row['Mental_Health_History'] == 'Yes' and row['Mood_Swings'] == 'High':\n",
-    "        return 'Depression'\n",
-    "    elif row['Coping_Struggles'] == 'Yes' and row['Changes_Habits'] == 'Yes':\n",
-    "        return 'Anxiety'\n",
-    "    elif row['Social_Weakness'] == 'Yes' and row['Work_Interest'] == 'No':\n",
-    "        return 'Social Anxiety'\n",
-    "    \n",
-    "    # Conditions combining multiple factors\n",
-    "    elif row['family_history'] == 'Yes' and row['Days_Indoors'] in ['More than 2 months', '15-30 days', '31-60 days']:\n",
-    "        return 'Isolation'\n",
-    "    elif row['Occupation'] == 'Corporate' and row['Growing_Stress'] == 'High' and row['Days_Indoors'] in ['More than 2 months', '15-30 days', '31-60 days']:\n",
-    "        return 'Corporate Burnout'\n",
-    "    elif row['Occupation'] == 'Student' and row['Growing_Stress'] == 'High' and row['Days_Indoors'] in ['More than 2 months', '15-30 days', '31-60 days']:\n",
-    "        return 'Student Burnout'\n",
-    "    elif row['Occupation'] == 'Others' and row['Mental_Health_History'] == 'Yes' and row['Coping_Struggles'] == 'Yes':\n",
-    "        if row['Gender'] == 'Female':\n",
-    "            return 'Others Job Female Anxiety'\n",
-    "        elif row['Gender'] == 'Male':\n",
-    "            return 'Others Job Male Anxiety'\n",
-    "        else:\n",
-    "            return 'Others Job Anxiety'\n",
-    "    elif row['self_employed'] == 'Yes' and row['Growing_Stress'] == 'High' and row['Coping_Struggles'] == 'Yes':\n",
-    "        return 'Entrepreneurial Stress'\n",
-    "    elif row['self_employed'] == 'Yes' and row['Growing_Stress'] == 'High' and row['Work_Interest'] == 'No':\n",
-    "        return 'Entrepreneurial Burnout'\n",
-    "    \n",
-    "    \n",
-    "    elif row['Gender'] == 'Female' and row['Mental_Health_History'] == 'Yes' and row['Coping_Struggles'] == 'Yes':\n",
-    "        return 'Female Anxiety'\n",
-    "    elif row['Gender'] == 'Male' and row['Mental_Health_History'] == 'Yes' and row['Work_Interest'] == 'No':\n",
-    "        return 'Male Social Anxiety'\n",
-    "    \n",
-    "    # Default condition if none of the above match\n",
-    "    else:\n",
-    "        return 'None'\n",
-    "\n",
-    "\n",
-    "# Menambahkan kolom 'mental_health_issue' ke DataFrame\n",
-    "df['mental_health_issue'] = df.apply(determine_mental_health_issue, axis=1)\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 4,
-   "id": "c7d08832-3dac-482a-89b9-6ae66f0816cf",
-   "metadata": {},
-   "outputs": [
-    {
-     "data": {
-      "text/html": [
-       "<div>\n",
-       "<style scoped>\n",
-       "    .dataframe tbody tr th:only-of-type {\n",
-       "        vertical-align: middle;\n",
-       "    }\n",
-       "\n",
-       "    .dataframe tbody tr th {\n",
-       "        vertical-align: top;\n",
-       "    }\n",
-       "\n",
-       "    .dataframe thead th {\n",
-       "        text-align: right;\n",
-       "    }\n",
-       "</style>\n",
-       "<table border=\"1\" class=\"dataframe\">\n",
-       "  <thead>\n",
-       "    <tr style=\"text-align: right;\">\n",
-       "      <th></th>\n",
-       "      <th>Gender</th>\n",
-       "      <th>Country</th>\n",
-       "      <th>Occupation</th>\n",
-       "      <th>self_employed</th>\n",
-       "      <th>family_history</th>\n",
-       "      <th>treatment</th>\n",
-       "      <th>Days_Indoors</th>\n",
-       "      <th>Growing_Stress</th>\n",
-       "      <th>Changes_Habits</th>\n",
-       "      <th>Mental_Health_History</th>\n",
-       "      <th>Mood_Swings</th>\n",
-       "      <th>Coping_Struggles</th>\n",
-       "      <th>Work_Interest</th>\n",
-       "      <th>Social_Weakness</th>\n",
-       "      <th>mental_health_interview</th>\n",
-       "      <th>care_options</th>\n",
-       "      <th>mental_health_issue</th>\n",
-       "    </tr>\n",
-       "  </thead>\n",
-       "  <tbody>\n",
-       "    <tr>\n",
-       "      <th>0</th>\n",
-       "      <td>Female</td>\n",
-       "      <td>United States</td>\n",
-       "      <td>Corporate</td>\n",
-       "      <td>NaN</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>1-14 days</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Medium</td>\n",
-       "      <td>No</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Not sure</td>\n",
-       "      <td>Social Anxiety</td>\n",
-       "    </tr>\n",
-       "    <tr>\n",
-       "      <th>1</th>\n",
-       "      <td>Female</td>\n",
-       "      <td>United States</td>\n",
-       "      <td>Corporate</td>\n",
-       "      <td>NaN</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>1-14 days</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Medium</td>\n",
-       "      <td>No</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Social Anxiety</td>\n",
-       "    </tr>\n",
-       "    <tr>\n",
-       "      <th>2</th>\n",
-       "      <td>Female</td>\n",
-       "      <td>United States</td>\n",
-       "      <td>Corporate</td>\n",
-       "      <td>NaN</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>1-14 days</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Medium</td>\n",
-       "      <td>No</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Social Anxiety</td>\n",
-       "    </tr>\n",
-       "    <tr>\n",
-       "      <th>3</th>\n",
-       "      <td>Female</td>\n",
-       "      <td>United States</td>\n",
-       "      <td>Corporate</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>1-14 days</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Medium</td>\n",
-       "      <td>No</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Maybe</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Social Anxiety</td>\n",
-       "    </tr>\n",
-       "    <tr>\n",
-       "      <th>4</th>\n",
-       "      <td>Female</td>\n",
-       "      <td>United States</td>\n",
-       "      <td>Corporate</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>1-14 days</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Medium</td>\n",
-       "      <td>No</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Social Anxiety</td>\n",
-       "    </tr>\n",
-       "    <tr>\n",
-       "      <th>...</th>\n",
-       "      <td>...</td>\n",
-       "      <td>...</td>\n",
-       "      <td>...</td>\n",
-       "      <td>...</td>\n",
-       "      <td>...</td>\n",
-       "      <td>...</td>\n",
-       "      <td>...</td>\n",
-       "      <td>...</td>\n",
-       "      <td>...</td>\n",
-       "      <td>...</td>\n",
-       "      <td>...</td>\n",
-       "      <td>...</td>\n",
-       "      <td>...</td>\n",
-       "      <td>...</td>\n",
-       "      <td>...</td>\n",
-       "      <td>...</td>\n",
-       "      <td>...</td>\n",
-       "    </tr>\n",
-       "    <tr>\n",
-       "      <th>95</th>\n",
-       "      <td>Female</td>\n",
-       "      <td>United States</td>\n",
-       "      <td>Corporate</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>1-14 days</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Medium</td>\n",
-       "      <td>No</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Social Anxiety</td>\n",
-       "    </tr>\n",
-       "    <tr>\n",
-       "      <th>96</th>\n",
-       "      <td>Female</td>\n",
-       "      <td>United States</td>\n",
-       "      <td>Corporate</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>1-14 days</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Medium</td>\n",
-       "      <td>No</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Social Anxiety</td>\n",
-       "    </tr>\n",
-       "    <tr>\n",
-       "      <th>97</th>\n",
-       "      <td>Female</td>\n",
-       "      <td>United States</td>\n",
-       "      <td>Corporate</td>\n",
-       "      <td>No</td>\n",
-       "      <td>No</td>\n",
-       "      <td>No</td>\n",
-       "      <td>1-14 days</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Medium</td>\n",
-       "      <td>No</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Not sure</td>\n",
-       "      <td>Social Anxiety</td>\n",
-       "    </tr>\n",
-       "    <tr>\n",
-       "      <th>98</th>\n",
-       "      <td>Female</td>\n",
-       "      <td>Canada</td>\n",
-       "      <td>Corporate</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>1-14 days</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Medium</td>\n",
-       "      <td>No</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Not sure</td>\n",
-       "      <td>Social Anxiety</td>\n",
-       "    </tr>\n",
-       "    <tr>\n",
-       "      <th>99</th>\n",
-       "      <td>Female</td>\n",
-       "      <td>United States</td>\n",
-       "      <td>Corporate</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>1-14 days</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>Medium</td>\n",
-       "      <td>No</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Yes</td>\n",
-       "      <td>No</td>\n",
-       "      <td>No</td>\n",
-       "      <td>Social Anxiety</td>\n",
-       "    </tr>\n",
-       "  </tbody>\n",
-       "</table>\n",
-       "<p>100 rows × 17 columns</p>\n",
-       "</div>"
-      ],
-      "text/plain": [
-       "    Gender        Country Occupation self_employed family_history treatment  \\\n",
-       "0   Female  United States  Corporate           NaN             No       Yes   \n",
-       "1   Female  United States  Corporate           NaN            Yes       Yes   \n",
-       "2   Female  United States  Corporate           NaN            Yes       Yes   \n",
-       "3   Female  United States  Corporate            No            Yes       Yes   \n",
-       "4   Female  United States  Corporate            No            Yes       Yes   \n",
-       "..     ...            ...        ...           ...            ...       ...   \n",
-       "95  Female  United States  Corporate            No            Yes       Yes   \n",
-       "96  Female  United States  Corporate            No            Yes       Yes   \n",
-       "97  Female  United States  Corporate            No             No        No   \n",
-       "98  Female         Canada  Corporate            No            Yes       Yes   \n",
-       "99  Female  United States  Corporate            No            Yes        No   \n",
-       "\n",
-       "   Days_Indoors Growing_Stress Changes_Habits Mental_Health_History  \\\n",
-       "0     1-14 days            Yes             No                   Yes   \n",
-       "1     1-14 days            Yes             No                   Yes   \n",
-       "2     1-14 days            Yes             No                   Yes   \n",
-       "3     1-14 days            Yes             No                   Yes   \n",
-       "4     1-14 days            Yes             No                   Yes   \n",
-       "..          ...            ...            ...                   ...   \n",
-       "95    1-14 days            Yes             No                   Yes   \n",
-       "96    1-14 days            Yes             No                   Yes   \n",
-       "97    1-14 days            Yes             No                   Yes   \n",
-       "98    1-14 days            Yes             No                   Yes   \n",
-       "99    1-14 days            Yes             No                   Yes   \n",
-       "\n",
-       "   Mood_Swings Coping_Struggles Work_Interest Social_Weakness  \\\n",
-       "0       Medium               No            No             Yes   \n",
-       "1       Medium               No            No             Yes   \n",
-       "2       Medium               No            No             Yes   \n",
-       "3       Medium               No            No             Yes   \n",
-       "4       Medium               No            No             Yes   \n",
-       "..         ...              ...           ...             ...   \n",
-       "95      Medium               No            No             Yes   \n",
-       "96      Medium               No            No             Yes   \n",
-       "97      Medium               No            No             Yes   \n",
-       "98      Medium               No            No             Yes   \n",
-       "99      Medium               No            No             Yes   \n",
-       "\n",
-       "   mental_health_interview care_options mental_health_issue  \n",
-       "0                       No     Not sure      Social Anxiety  \n",
-       "1                       No           No      Social Anxiety  \n",
-       "2                       No          Yes      Social Anxiety  \n",
-       "3                    Maybe          Yes      Social Anxiety  \n",
-       "4                       No          Yes      Social Anxiety  \n",
-       "..                     ...          ...                 ...  \n",
-       "95                      No          Yes      Social Anxiety  \n",
-       "96                      No           No      Social Anxiety  \n",
-       "97                      No     Not sure      Social Anxiety  \n",
-       "98                      No     Not sure      Social Anxiety  \n",
-       "99                      No           No      Social Anxiety  \n",
-       "\n",
-       "[100 rows x 17 columns]"
-      ]
-     },
-     "execution_count": 4,
-     "metadata": {},
-     "output_type": "execute_result"
+import pandas as pd
+import streamlit as st
+import joblib
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+
+
+# Path ke dataset
+path = "D:/kuliah/SEMESTER 4/ML/DataSet/UTS/archive (2)/Mental Health Dataset.csv"
+
+# Membaca dataset
+df = pd.read_csv(path)
+
+# Menghapus kolom 'Timestamp'
+df = df.drop(columns=['Timestamp'])
+
+# Menentukan kriteria dan membuat label baru 'mental_health_issue'
+def determine_mental_health_issue(row):
+
+    if row['Mental_Health_History'] == 'Yes' and row['Mood_Swings'] == 'High':
+        return 'Depression'
+    elif row['Coping_Struggles'] == 'Yes' and row['Changes_Habits'] == 'Yes':
+        return 'Anxiety'
+    elif row['Social_Weakness'] == 'Yes' and row['Work_Interest'] == 'No':
+        return 'Social Anxiety'
+    elif row['family_history'] == 'Yes' and row['Days_Indoors'] in ['More than 2 months', '15-30 days', '31-60 days']:
+        return 'Isolation'
+    elif row['Occupation'] == 'Corporate' and row['Growing_Stress'] == 'Yes' and row['Days_Indoors'] in ['More than 2 months', '15-30 days', '31-60 days']:
+        return 'Corporate Burnout'
+    elif row['Occupation'] == 'Student' and row['Growing_Stress'] == 'Yes' and row['Days_Indoors'] in ['More than 2 months', '15-30 days', '31-60 days']:
+        return 'Student Burnout'
+    elif row['self_employed'] == 'Yes' and row['Growing_Stress'] == 'Yes' and row['Coping_Struggles'] == 'Yes':
+        return 'Entrepreneurial Stress'
+    elif row['self_employed'] == 'Yes' and row['Growing_Stress'] == 'Yes' and row['Work_Interest'] == 'No':
+        return 'Entrepreneurial Burnout'
+    elif row['Gender'] == 'Female' and row['Mental_Health_History'] == 'Yes' and row['Coping_Struggles'] == 'Yes':
+        return 'Female Anxiety'
+    elif row['Gender'] == 'Male' and row['Mental_Health_History'] == 'Yes' and row['Work_Interest'] == 'No':
+        return 'Male Social Anxiety'
+    else:
+        return 'Not have a Mental Disorder'
+
+
+# Menambahkan kolom 'mental_health_issue'
+df['mental_health_issue'] = df.apply(determine_mental_health_issue, axis=1)
+
+# Memisahkan fitur (features) dan label (target)
+selected_features = ['Gender','Country','Occupation','self_employed', 'family_history', 'treatment', 'Days_Indoors', 'Growing_Stress', 'Changes_Habits', 'Mental_Health_History', 'Mood_Swings', 'Coping_Struggles', 'Work_Interest', 'Social_Weakness', 'mental_health_interview', 'care_options']
+X = df[selected_features]   #features
+y = df['mental_health_issue']   #label(target)
+
+# Mengubah data kategori menjadi numerik
+X = pd.get_dummies(X)
+
+# Membagi data menjadi data latih dan data uji
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Membuat model Decision Tree
+model = DecisionTreeClassifier(random_state=42)
+model.fit(X_train, y_train)
+
+# Melakukan prediksi pada data uji
+y_pred = model.predict(X_test)
+
+# Evaluasi performa model
+st.title("Mental Health Issue Prediction with Decision Tree")
+st.subheader('Analisis Dataset')
+st.write('### Jumlah kemunculan setiap label "mental_health_issue"')
+issue_counts = df['mental_health_issue'].value_counts()
+st.write(issue_counts)
+
+st.subheader('Classification Report')
+st.text(classification_report(y_test, y_pred))
+
+st.subheader('Confusion Matrix')
+conf_matrix = confusion_matrix(y_test, y_pred)
+st.write(conf_matrix)
+
+# Menyimpan model
+model_filename = 'mental_health_model.pkl'
+joblib.dump(model, model_filename)
+
+accuracy = accuracy_score(y_test, y_pred)
+
+# Streamlit App
+# Streamlit app for user input and prediction
+st.sidebar.header("Input Data")
+def user_input_features():
+    mental_health_history = st.sidebar.selectbox('Mental Health History', ['Yes', 'No', 'Maybe'])
+    mood_swings = st.sidebar.selectbox('Mood Swings', ['High', 'Low', 'Medium'])
+    coping_struggles = st.sidebar.selectbox('Coping Struggles', ['Yes', 'No'])
+    changes_habits = st.sidebar.selectbox('Changes in Habits', ['Yes', 'No', 'Maybe'])
+    social_weakness = st.sidebar.selectbox('Social Weakness', ['Yes', 'No', 'Maybe'])
+    work_interest = st.sidebar.selectbox('Work Interest', ['Yes', 'No', 'Maybe'])
+    family_history = st.sidebar.selectbox('Family History of Mental Illness', ['Yes', 'No'])
+    days_indoors = st.sidebar.selectbox('Days Spent Indoors', ['More than 2 months', '15-30 days', '31-60 days', 'Less than 15 days', 'Go out Every day'])
+    occupation = st.sidebar.selectbox('Occupation', ['Corporate', 'Student', 'Others'])
+    growing_stress = st.sidebar.selectbox('Growing Stress', ['Yes', 'No', 'Maybe'])
+    gender = st.sidebar.selectbox('Gender', ['Male', 'Female']) #menghapus nilai unik gender yaitu others
+    self_employed = st.sidebar.selectbox('Self Employed', ['Yes', 'No'])
+
+    data = {
+        'Mental_Health_History': mental_health_history,
+        'Mood_Swings': mood_swings,
+        'Coping_Struggles': coping_struggles,
+        'Changes_Habits': changes_habits,
+        'Social_Weakness': social_weakness,
+        'Work_Interest': work_interest,
+        'family_history': family_history,
+        'Days_Indoors': days_indoors,
+        'Occupation': occupation,
+        'Growing_Stress': growing_stress,
+        'Gender': gender,
+        'self_employed': self_employed
     }
-   ],
-   "source": [
-    "df.head(100)\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 5,
-   "id": "10a0fecf-2dfc-48e1-8fe6-d16e131db527",
-   "metadata": {},
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "mental_health_issue\n",
-      "None                         133245\n",
-      "Anxiety                       45471\n",
-      "Isolation                     44575\n",
-      "Depression                    28815\n",
-      "Social Anxiety                26859\n",
-      "Male Social Anxiety            9320\n",
-      "Others Job Male Anxiety        2245\n",
-      "Female Anxiety                 1448\n",
-      "Others Job Female Anxiety       386\n",
-      "Name: count, dtype: int64\n"
-     ]
-    }
-   ],
-   "source": [
-    "# Hitung jumlah kemunculan setiap label 'mental_health_issue'\n",
-    "issue_counts = df['mental_health_issue'].value_counts()\n",
-    "\n",
-    "# Tampilkan hasilnya\n",
-    "print(issue_counts)\n",
-    "\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 6,
-   "id": "d75970fd-e36c-4a40-af2e-778979484004",
-   "metadata": {},
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "Nilai unik dari kolom 'Gender':\n",
-      "['Female' 'Male']\n",
-      "\n",
-      "Nilai unik dari kolom 'Country':\n",
-      "['United States' 'Poland' 'Australia' 'Canada' 'United Kingdom'\n",
-      " 'South Africa' 'Sweden' 'New Zealand' 'Netherlands' 'India' 'Belgium'\n",
-      " 'Ireland' 'France' 'Portugal' 'Brazil' 'Costa Rica' 'Russia' 'Germany'\n",
-      " 'Switzerland' 'Finland' 'Israel' 'Italy' 'Bosnia and Herzegovina'\n",
-      " 'Singapore' 'Nigeria' 'Croatia' 'Thailand' 'Denmark' 'Mexico' 'Greece'\n",
-      " 'Moldova' 'Colombia' 'Georgia' 'Czech Republic' 'Philippines']\n",
-      "\n",
-      "Nilai unik dari kolom 'Occupation':\n",
-      "['Corporate' 'Student' 'Business' 'Housewife' 'Others']\n",
-      "\n",
-      "Nilai unik dari kolom 'self_employed':\n",
-      "[nan 'No' 'Yes']\n",
-      "\n",
-      "Nilai unik dari kolom 'family_history':\n",
-      "['No' 'Yes']\n",
-      "\n",
-      "Nilai unik dari kolom 'treatment':\n",
-      "['Yes' 'No']\n",
-      "\n",
-      "Nilai unik dari kolom 'Days_Indoors':\n",
-      "['1-14 days' 'Go out Every day' 'More than 2 months' '15-30 days'\n",
-      " '31-60 days']\n",
-      "\n",
-      "Nilai unik dari kolom 'Growing_Stress':\n",
-      "['Yes' 'No' 'Maybe']\n",
-      "\n",
-      "Nilai unik dari kolom 'Changes_Habits':\n",
-      "['No' 'Yes' 'Maybe']\n",
-      "\n",
-      "Nilai unik dari kolom 'Mental_Health_History':\n",
-      "['Yes' 'No' 'Maybe']\n",
-      "\n",
-      "Nilai unik dari kolom 'Mood_Swings':\n",
-      "['Medium' 'Low' 'High']\n",
-      "\n",
-      "Nilai unik dari kolom 'Coping_Struggles':\n",
-      "['No' 'Yes']\n",
-      "\n",
-      "Nilai unik dari kolom 'Work_Interest':\n",
-      "['No' 'Maybe' 'Yes']\n",
-      "\n",
-      "Nilai unik dari kolom 'Social_Weakness':\n",
-      "['Yes' 'No' 'Maybe']\n",
-      "\n",
-      "Nilai unik dari kolom 'mental_health_interview':\n",
-      "['No' 'Maybe' 'Yes']\n",
-      "\n",
-      "Nilai unik dari kolom 'care_options':\n",
-      "['Not sure' 'No' 'Yes']\n",
-      "\n",
-      "Nilai unik dari kolom 'mental_health_issue':\n",
-      "['Social Anxiety' 'Anxiety' 'None' 'Isolation' 'Female Anxiety'\n",
-      " 'Depression' 'Others Job Female Anxiety' 'Male Social Anxiety'\n",
-      " 'Others Job Male Anxiety']\n",
-      "\n"
-     ]
-    }
-   ],
-   "source": [
-    "# Loop untuk menampilkan nilai unik dari setiap kolom\n",
-    "for column in df.columns:\n",
-    "    unique_values = df[column].unique()\n",
-    "    print(f\"Nilai unik dari kolom '{column}':\")\n",
-    "    print(unique_values)\n",
-    "    print()"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 7,
-   "id": "403922ef-2012-48fd-8318-60c740aafd4a",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "# Memisahkan fitur (features) dan label (target)\n",
-    "selected_features = ['self_employed', 'family_history', 'treatment', 'Days_Indoors', 'Growing_Stress', 'Changes_Habits', 'Mental_Health_History', 'Mood_Swings', 'Coping_Struggles', 'Work_Interest', 'Social_Weakness', 'mental_health_interview', 'care_options']\n",
-    "X = df[selected_features]\n",
-    "y = df['mental_health_issue']  # label\n",
-    "\n",
-    "# Mengubah data kategori menjadi numerik (jika diperlukan)\n",
-    "X = pd.get_dummies(X)\n",
-    "\n",
-    "# Membagi data menjadi data latih dan data uji\n",
-    "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n",
-    "\n",
-    "# Membuat model Decision Tree\n",
-    "model = DecisionTreeClassifier(random_state=42)\n",
-    "\n",
-    "# Melatih model\n",
-    "model.fit(X_train, y_train)\n",
-    "\n",
-    "# Membuat prediksi menggunakan data uji\n",
-    "y_pred = model.predict(X_test)"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 8,
-   "id": "76ae517a-36e6-46ad-84ea-a689fc4d4625",
-   "metadata": {},
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "Classification Report:\n",
-      "                           precision    recall  f1-score   support\n",
-      "\n",
-      "                  Anxiety       1.00      1.00      1.00      9017\n",
-      "               Depression       1.00      1.00      1.00      5660\n",
-      "           Female Anxiety       1.00      1.00      1.00       291\n",
-      "                Isolation       1.00      1.00      1.00      9012\n",
-      "      Male Social Anxiety       0.97      1.00      0.98      1870\n",
-      "                     None       1.00      1.00      1.00     26642\n",
-      "Others Job Female Anxiety       1.00      1.00      1.00        93\n",
-      "  Others Job Male Anxiety       1.00      1.00      1.00       400\n",
-      "           Social Anxiety       1.00      1.00      1.00      5488\n",
-      "\n",
-      "                 accuracy                           1.00     58473\n",
-      "                macro avg       1.00      1.00      1.00     58473\n",
-      "             weighted avg       1.00      1.00      1.00     58473\n",
-      "\n",
-      "\n",
-      "Confusion Matrix:\n",
-      "[[ 9017     0     0     0     0     0     0     0     0]\n",
-      " [    0  5660     0     0     0     0     0     0     0]\n",
-      " [    0     0   291     0     0     0     0     0     0]\n",
-      " [    0     0     0  9012     0     0     0     0     0]\n",
-      " [    0     0     0     0  1868     2     0     0     0]\n",
-      " [    0     0     0     0    62 26580     0     0     0]\n",
-      " [    0     0     0     0     0     0    93     0     0]\n",
-      " [    0     0     0     0     0     0     0   400     0]\n",
-      " [    0     0     0     0     0     0     0     0  5488]]\n"
-     ]
-    }
-   ],
-   "source": [
-    "# Evaluasi performa model\n",
-    "print(\"Classification Report:\")\n",
-    "print(classification_report(y_test, y_pred))\n",
-    "print(\"\\nConfusion Matrix:\")\n",
-    "print(confusion_matrix(y_test, y_pred))\n",
-    "\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 9,
-   "id": "53ceed78-60e9-46f0-8732-14ac06a48995",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "# Menghitung akurasi\n",
-    "accuracy = accuracy_score(y_test, y_pred)"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 10,
-   "id": "6c50057d-d858-48a4-a7dc-60fab037ddd6",
-   "metadata": {},
-   "outputs": [
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "2024-07-19 20:27:49.137 \n",
-      "  \u001b[33m\u001b[1mWarning:\u001b[0m to view this Streamlit app on a browser, run it with the following\n",
-      "  command:\n",
-      "\n",
-      "    streamlit run C:\\ProgramData\\anaconda3\\Lib\\site-packages\\ipykernel_launcher.py [ARGUMENTS]\n"
-     ]
-    }
-   ],
-   "source": [
-    "# Streamlit App\n",
-    "st.title('Mental Health Issue Prediction')\n",
-    "st.write(f'Akurasi model: {accuracy * 100:.2f}%')"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 11,
-   "id": "878dd910-1c01-46e4-8c59-c892c2025aec",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "# Form input untuk prediksi\n",
-    "st.header('Masukkan Data untuk Prediksi')\n",
-    "input_data = {}\n",
-    "for column in selected_features:\n",
-    "    input_data[column] = st.selectbox(column, df[column].unique())\n",
-    "\n",
-    "input_df = pd.DataFrame([input_data])\n",
-    "input_df = pd.get_dummies(input_df).reindex(columns=X.columns, fill_value=0)"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 12,
-   "id": "1b79c4bc-ffc6-40f7-bdf8-a0cee100af07",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "# Melakukan prediksi dengan data input\n",
-    "if st.button('Prediksi'):\n",
-    "    prediction = model.predict(input_df)\n",
-    "    st.write(f'Prediksi kondisi mental health issue: {prediction[0]}')"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": None,
-   "id": "6d3c8b93-5d60-4788-b808-7e8ef5dfdbd2",
-   "metadata": {},
-   "outputs": [],
-   "source": []
-  },
-  {
-   "cell_type": "code",
-   "execution_count": None,
-   "id": "5994cda8-b4a9-4ef1-86b8-c022c7d5736a",
-   "metadata": {},
-   "outputs": [],
-   "source": []
-  }
- ],
- "metadata": {
-  "kernelspec": {
-   "display_name": "Python 3 (ipykernel)",
-   "language": "python",
-   "name": "python3"
-  },
-  "language_info": {
-   "codemirror_mode": {
-    "name": "ipython",
-    "version": 3
-   },
-   "file_extension": ".py",
-   "mimetype": "text/x-python",
-   "name": "python",
-   "nbconvert_exporter": "python",
-   "pygments_lexer": "ipython3",
-   "version": "3.11.7"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 5
-}
+    
+    features = pd.DataFrame(data, index=[0])
+    return features
+
+input_df = user_input_features()
+
+# Convert user input features to numeric
+input_df = pd.get_dummies(input_df)
+input_df = input_df.reindex(columns=X.columns, fill_value=0)
+
+# Predict mental health issue
+prediction = model.predict(input_df)
+st.subheader('User Input Data')
+st.write(input_df)
+
+st.subheader('Prediction')
+st.write(f"Mental Health Issue: {prediction[0]}")
+
+# Show the user the prediction and related information
+st.subheader('Prediction Probability')
+prediction_proba = model.predict_proba(input_df)
+prediction_proba_df = pd.DataFrame(prediction_proba, columns=model.classes_)
+st.write(prediction_proba_df)
+
+
+
+
+
